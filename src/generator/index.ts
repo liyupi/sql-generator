@@ -51,10 +51,9 @@ function replaceSubSql(sql: string, context: InputJSON): string {
     if (!sql) {
         return "";
     }
-    const regExp = /@([\u4e00-\u9fa5_a-zA-Z0-9]+)\((.*?)\)/;
     let result = sql;
     result = String(result);
-    let regExpMatchArray = result.match(regExp);
+    let regExpMatchArray = matchSubQuery(result);
     // 依次替换
     while (regExpMatchArray && regExpMatchArray.length > 2) {
         // 找到结果
@@ -72,11 +71,12 @@ function replaceSubSql(sql: string, context: InputJSON): string {
             paramsStr = paramsStr.trim();
         }
         // e.g. ["a = b", "c = d"]
-        const singleParamsStrArray = paramsStr.split(',');
+        const singleParamsStrArray = paramsStr.split('|||');
         // string => object
         const params: Record<string, string> = {};
         for (const singleParamsStr of singleParamsStrArray) {
-            const keyValueArray = singleParamsStr.split('=');
+            // 必须分成 2 段
+            const keyValueArray = singleParamsStr.split('=', 2);
             if (keyValueArray.length < 2) {
                 continue;
             }
@@ -85,7 +85,51 @@ function replaceSubSql(sql: string, context: InputJSON): string {
         }
         const replacement = replaceParams(replacementNode, context, params);
         result = result.replaceAll(regExpMatchArray[0], replacement);
-        regExpMatchArray = result.match(regExp);
+        regExpMatchArray = matchSubQuery(result);
     }
     return result;
+}
+
+/**
+ * 匹配子查询
+ * @param str
+ */
+function matchSubQuery(str: string) {
+    if (!str) {
+        return null;
+    }
+    const regExp = /@([\u4e00-\u9fa5_a-zA-Z0-9]+)\((.*?)\)/;
+    let regExpMatchArray = str.match(regExp);
+    if (!regExpMatchArray || regExpMatchArray.index === undefined) {
+        return null;
+    }
+    // @ 开始位置
+    let startPos = regExpMatchArray.index;
+    // 左括号右侧
+    let leftParenthesisPos = startPos + regExpMatchArray[1].length + 2;
+    // 遍历游标
+    let currPos = leftParenthesisPos;
+    // 默认匹配结束位置，需要对此结果进行修正
+    let endPos = startPos + regExpMatchArray[0].length;
+    // 剩余待匹配左括号数量
+    let leftCount = 1;
+    while (currPos < str.length) {
+        const currentChar = str.charAt(currPos);
+        if (currentChar === '(') {
+            leftCount++;
+        } else if (currentChar === ')') {
+            leftCount--;
+        }
+        // 匹配结束
+        if (leftCount == 0) {
+            endPos = currPos + 1;
+            break;
+        }
+        currPos++;
+    }
+    return [
+        str.slice(startPos, endPos),
+        regExpMatchArray[1],
+        str.slice(leftParenthesisPos, endPos - 1)
+    ]
 }

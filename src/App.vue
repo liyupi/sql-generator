@@ -7,11 +7,24 @@ import {format} from "sql-formatter";
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 
-self.MonacoEnvironment = {
-  getWorker(_, label) {
+// @ts-ignore
+(self as any).MonacoEnvironment = {
+  getWorker(_: any, label: any) {
     if (label === 'json') {
       return new jsonWorker()
+    }
+    if (label === 'css' || label === 'scss' || label === 'less') {
+      return new cssWorker()
+    }
+    if (label === 'html' || label === 'handlebars' || label === 'razor') {
+      return new htmlWorker()
+    }
+    if (label === 'typescript' || label === 'javascript') {
+      return new tsWorker()
     }
     return new editorWorker()
   }
@@ -31,6 +44,10 @@ const getSQL = () => {
     result = result.replaceAll("} }", "}}")
     toRaw(outputEditor.value).setValue(result);
   }
+}
+
+const getInvokeTree = () => {
+
 }
 
 const initJSONValue = "{\n" +
@@ -82,8 +99,13 @@ onMounted(() => {
 
 <template>
   <h1>
-    SQL 生成器
-    <t-button size="large" theme="primary" @click="getSQL" style="float: right"> 生成 SQL</t-button>
+    SQL 生成器 - 用 JSON 来写 SQL
+    <div style="float: right">
+      <t-button size="large" theme="primary" @click="getSQL" > 生成 SQL</t-button>
+      <t-divider theme="vertical" />
+      <t-button size="large" theme="default" @click="getInvokeTree"> 查看调用树</t-button>
+    </div>
+    <t-tree :data="[]" activable hover />
   </h1>
   <t-row :gutter="24">
     <t-col :xs="12" :sm="6">
@@ -93,7 +115,10 @@ onMounted(() => {
       <div id="outputContainer" ref="outputContainer" style="height: 80vh; max-width: 100%"/>
     </t-col>
   </t-row>
-  <div>yupi：你能体会手写 1500 行 SQL、牵一发而动全身的恐惧么？</div>
+  <br/>
+  <div>
+    yupi：你能体会手写 1500 行 SQL、牵一发而动全身的恐惧么？
+  </div>
 </template>
 
 <style>
