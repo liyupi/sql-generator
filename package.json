@@ -1,0 +1,22 @@
+{
+  "name": "sql-generator",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.33.0",
+    "sql-formatter": "^4.0.2",
+    "tdesign-vue-next": "^0.14.1",
+    "vue": "^3.2.25"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.3.1",
+    "typescript": "^4.5.4",
+    "vite": "^2.9.7",
+    "vue-tsc": "^0.34.7"
+  }
+}

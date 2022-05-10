@@ -1,0 +1,104 @@
+<script setup lang="ts">
+import {doGenerateSQL} from "./generator";
+import {onMounted, ref, toRaw} from "vue";
+import * as monaco from "monaco-editor";
+import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
+import {format} from "sql-formatter";
+
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
+
+self.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === 'json') {
+      return new jsonWorker()
+    }
+    return new editorWorker()
+  }
+}
+
+const inputEditor = ref<IStandaloneCodeEditor>();
+const outputEditor = ref<IStandaloneCodeEditor>();
+const inputContainer = ref<HTMLElement>();
+const outputContainer = ref<HTMLElement>();
+
+const getSQL = () => {
+  if (inputEditor.value && outputEditor.value) {
+    const inputJSON = JSON.parse(toRaw(inputEditor.value).getValue());
+    let result = format(doGenerateSQL(inputJSON));
+    // 针对执行引擎，处理自动格式化的问题
+    result = result.replaceAll("{ {", "{{")
+    result = result.replaceAll("} }", "}}")
+    toRaw(outputEditor.value).setValue(result);
+  }
+}
+
+const initJSONValue = "{\n" +
+    "    \"main\": {\n" +
+    "        \"sql\": \"select * from @union_all_layer(分区 = 2021) where 分区 = #{分区}\",\n" +
+    "        \"params\": {\n" +
+    "            \"分区\": 2022\n" +
+    "        }\n" +
+    "    },\n" +
+    "    \"union_all_layer\": {\n" +
+    "        \"sql\": \"select * from xx where 分区 = #{分区}\"\n" +
+    "    }\n" +
+    "}";
+
+onMounted(() => {
+  if (inputContainer.value) {
+    inputEditor.value = monaco.editor.create(inputContainer.value, {
+      value: localStorage.getItem('draft') ?? initJSONValue,
+      language: 'json',
+      theme: 'vs-dark',
+      formatOnPaste: true,
+      fontSize: 16,
+      minimap: {
+        enabled: false,
+      },
+    });
+    setInterval(() => {
+      if (inputEditor.value) {
+        localStorage.setItem('draft', toRaw(inputEditor.value).getValue());
+      }
+    }, 3000)
+  }
+  if (outputContainer.value) {
+    outputEditor.value = monaco.editor.create(outputContainer.value, {
+      value: "",
+      language: 'sql',
+      theme: 'vs-dark',
+      formatOnPaste: true,
+      fontSize: 16,
+      minimap: {
+        enabled: false,
+      },
+    });
+    getSQL();
+  }
+});
+
+</script>
+
+<template>
+  <h1>
+    SQL 生成器
+    <t-button size="large" theme="primary" @click="getSQL" style="float: right"> 生成 SQL</t-button>
+  </h1>
+  <t-row :gutter="24">
+    <t-col :xs="12" :sm="6">
+      <div id="inputContainer" ref="inputContainer" style="height: 80vh; max-width: 100%"/>
+    </t-col>
+    <t-col :xs="12" :sm="6">
+      <div id="outputContainer" ref="outputContainer" style="height: 80vh; max-width: 100%"/>
+    </t-col>
+  </t-row>
+  <div>yupi：你能体会手写 1500 行 SQL、牵一发而动全身的恐惧么？</div>
+</template>
+
+<style>
+#app {
+  padding: 0 25px;
+}
+
+</style>
