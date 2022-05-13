@@ -1,73 +1,83 @@
 <script setup lang="ts">
-import {doGenerateSQL} from "./generator";
-import {onMounted, ref, toRaw} from "vue";
+import { doGenerateSQL } from "./generator";
+import { onMounted, ref, toRaw } from "vue";
 import * as monaco from "monaco-editor";
+import { format } from "sql-formatter";
+import { GithubOutlined } from "@ant-design/icons-vue";
+
+import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import JsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import CssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import HtmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import TsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+// eslint-disable-next-line no-undef
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
-import {format} from "sql-formatter";
 
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
-
-// @ts-ignore
 (self as any).MonacoEnvironment = {
   getWorker(_: any, label: any) {
-    if (label === 'json') {
-      return new jsonWorker()
+    if (label === "json") {
+      return new JsonWorker();
     }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker()
+    if (label === "css" || label === "scss" || label === "less") {
+      return new CssWorker();
     }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker()
+    if (label === "html" || label === "handlebars" || label === "razor") {
+      return new HtmlWorker();
     }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker()
+    if (label === "typescript" || label === "javascript") {
+      return new TsWorker();
     }
-    return new editorWorker()
-  }
-}
+    return new EditorWorker();
+  },
+};
+
+const initTreeNode = {
+  label: "main",
+  sql: "",
+  children: [],
+};
 
 const inputEditor = ref<IStandaloneCodeEditor>();
 const outputEditor = ref<IStandaloneCodeEditor>();
 const inputContainer = ref<HTMLElement>();
 const outputContainer = ref<HTMLElement>();
+const treeNode = ref<InvokeTreeNode>({ ...initTreeNode });
 
 const getSQL = () => {
   if (inputEditor.value && outputEditor.value) {
     const inputJSON = JSON.parse(toRaw(inputEditor.value).getValue());
-    let result = format(doGenerateSQL(inputJSON));
+    treeNode.value = { ...initTreeNode };
+    const sqlResult = doGenerateSQL(inputJSON, treeNode.value);
+    let result = format(sqlResult);
     // 针对执行引擎，处理自动格式化的问题
-    result = result.replaceAll("{ {", "{{")
-    result = result.replaceAll("} }", "}}")
+    result = result.replaceAll("{ {", "{{");
+    result = result.replaceAll("} }", "}}");
     toRaw(outputEditor.value).setValue(result);
+    console.log(treeNode.value);
   }
-}
+};
 
-const getInvokeTree = () => {
+const getInvokeTree = () => {};
 
-}
-
-const initJSONValue = "{\n" +
-    "    \"main\": {\n" +
-    "        \"sql\": \"select * from @union_all_layer(分区 = 2021) where 分区 = #{分区}\",\n" +
-    "        \"params\": {\n" +
-    "            \"分区\": 2022\n" +
-    "        }\n" +
-    "    },\n" +
-    "    \"union_all_layer\": {\n" +
-    "        \"sql\": \"select * from xx where 分区 = #{分区}\"\n" +
-    "    }\n" +
-    "}";
+const initJSONValue =
+  "{\n" +
+  '    "main": {\n' +
+  '        "sql": "select * from @union_all_layer(分区 = 2021) where 分区 = #{分区}",\n' +
+  '        "params": {\n' +
+  '            "分区": 2022\n' +
+  "        }\n" +
+  "    },\n" +
+  '    "union_all_layer": {\n' +
+  '        "sql": "select * from xx where 分区 = #{分区}"\n' +
+  "    }\n" +
+  "}";
 
 onMounted(() => {
   if (inputContainer.value) {
     inputEditor.value = monaco.editor.create(inputContainer.value, {
-      value: localStorage.getItem('draft') ?? initJSONValue,
-      language: 'json',
-      theme: 'vs-dark',
+      value: localStorage.getItem("draft") ?? initJSONValue,
+      language: "json",
+      theme: "vs-dark",
       formatOnPaste: true,
       fontSize: 16,
       minimap: {
@@ -76,54 +86,73 @@ onMounted(() => {
     });
     setInterval(() => {
       if (inputEditor.value) {
-        localStorage.setItem('draft', toRaw(inputEditor.value).getValue());
+        localStorage.setItem("draft", toRaw(inputEditor.value).getValue());
       }
-    }, 3000)
+    }, 3000);
   }
   if (outputContainer.value) {
     outputEditor.value = monaco.editor.create(outputContainer.value, {
       value: "",
-      language: 'sql',
-      theme: 'vs-dark',
+      language: "sql",
+      theme: "vs-dark",
       formatOnPaste: true,
       fontSize: 16,
       minimap: {
         enabled: false,
       },
     });
-    getSQL();
   }
 });
-
 </script>
 
 <template>
-  <h1>
-    SQL 生成器 - 用 JSON 来写 SQL
-    <div style="float: right">
-      <t-button size="large" theme="primary" @click="getSQL" > 生成 SQL</t-button>
-      <t-divider theme="vertical" />
-      <t-button size="large" theme="default" @click="getInvokeTree"> 查看调用树</t-button>
-    </div>
-    <t-tree :data="[]" activable hover />
-  </h1>
-  <t-row :gutter="24">
-    <t-col :xs="12" :sm="6">
-      <div id="inputContainer" ref="inputContainer" style="height: 80vh; max-width: 100%"/>
-    </t-col>
-    <t-col :xs="12" :sm="6">
-      <div id="outputContainer" ref="outputContainer" style="height: 80vh; max-width: 100%"/>
-    </t-col>
-  </t-row>
-  <br/>
   <div>
-    yupi：你能体会手写 1500 行 SQL、牵一发而动全身的恐惧么？
+    <a-row justify="space-between" align="middle" :gutter="[0, 16]">
+      <h1 style="margin-bottom: 0">🔨 结构化 SQL 生成器</h1>
+      <div>使用 JSON 来编写 SQL，告别重复代码，点击查看文档</div>
+      <a-space size="large">
+        <a-button size="large" type="primary" @click="getSQL">
+          生成 SQL
+        </a-button>
+        <a-button size="large" type="default" @click="getInvokeTree">
+          查看调用树
+        </a-button>
+      </a-space>
+    </a-row>
+    <div style="margin-top: 16px" />
+    <a-row :gutter="[16, 16]">
+      <a-col :sm="24" :md="12">
+        <div
+          id="inputContainer"
+          ref="inputContainer"
+          style="height: 80vh; max-width: 100%"
+        />
+      </a-col>
+      <a-col :sm="24" :md="12">
+        <div
+          id="outputContainer"
+          ref="outputContainer"
+          style="height: 80vh; max-width: 100%"
+        />
+      </a-col>
+    </a-row>
+    <br />
+    <div>yupi：你能体会手写一句 3000 行的 SQL、牵一发而动全身的恐惧么？</div>
+    <a-row justify="center">
+      <a-space>
+        作者：<a href="https://github.com/liyupi" target="_blank">鱼皮</a>
+        <a-divider type="vertical" />
+        <a href="https://github.com/liyupi/sql-generator" target="_blank">
+          <github-outlined />
+          项目已开源，欢迎 star
+        </a>
+      </a-space>
+    </a-row>
   </div>
 </template>
 
 <style>
 #app {
-  padding: 0 25px;
+  padding: 20px;
 }
-
 </style>

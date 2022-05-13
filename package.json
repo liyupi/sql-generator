@@ -1,20 +1,32 @@
 {
   "name": "sql-generator",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^6.1.0",
+    "ant-design-vue": "^3.2.3",
     "monaco-editor": "^0.33.0",
     "sql-formatter": "^4.0.2",
-    "tdesign-vue-next": "^0.14.1",
     "vue": "^3.2.25"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.23.0",
+    "@typescript-eslint/parser": "^5.23.0",
     "@vitejs/plugin-vue": "^2.3.1",
+    "eslint": "^8.15.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-vue": "^8.7.1",
+    "prettier": "2.6.2",
     "typescript": "^4.5.4",
     "vite": "^2.9.7",
     "vue-tsc": "^0.34.7"
