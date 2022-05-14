@@ -1,14 +1,53 @@
 /**
- * 生成 SQL
+ * 生成 SQL 入口函数
  * @param json
  */
-export function doGenerateSQL(json: InputJSON): string {
-    if (!json?.main) {
-        return "";
-    }
-    const context = json;
-    const result = replaceParams(context.main, context);
-    return replaceSubSql(result, context);
+export function doGenerateSQL(json: InputJSON) {
+  // 缺失入口
+  if (!json?.main) {
+    return null;
+  }
+  const sql = json.main.sql ?? json.main;
+  if (!sql) {
+    return null;
+  }
+  const initTreeNode = {
+    title: "main",
+    sql,
+    children: [],
+  };
+  const rootInvokeTreeNode = { ...initTreeNode };
+  const context = json;
+  const resultSQL = generateSQL(
+    context.main,
+    context,
+    context.main?.params,
+    rootInvokeTreeNode
+  );
+  return {
+    resultSQL,
+    invokeTree: rootInvokeTreeNode,
+  };
+}
+
+/**
+ * 递归生成 SQL
+ * @param currentNode
+ * @param context
+ * @param params
+ * @param invokeTreeNode
+ */
+function generateSQL(
+  currentNode: InputJSONValue,
+  context: InputJSON,
+  params?: Record<string, string>,
+  invokeTreeNode?: InvokeTreeNode
+): string {
+  if (!currentNode) {
+    return "";
+  }
+  const result = replaceParams(currentNode, context, params, invokeTreeNode);
+  return replaceSubSql(result, context, invokeTreeNode);
 }
 
 /**
@@ -16,78 +55,112 @@ export function doGenerateSQL(json: InputJSON): string {
  * @param currentNode
  * @param context
  * @param params 动态参数
+ * @param invokeTreeNode
  */
-function replaceParams(currentNode: InputJSONValue, context: InputJSON, params?: Record<string, string>): string {
-    if (currentNode == null) {
-        return "";
-    }
-    const sql = currentNode.sql ?? currentNode;
-    if (!sql) {
-        return "";
-    }
-    // 动态、静态参数结合，且优先用静态参数
-    params = {...(params ?? {}), ...currentNode.params};
-    // 无需替换
-    if (!params || Object.keys(params).length < 1) {
-        return sql;
-    }
-    let result = sql;
-    for (const paramsKey in params) {
-        const replacedKey = `#{${paramsKey}}`;
-        // 递归解析
-        const replacement = replaceSubSql(params[paramsKey], context);
-        // find and replace
-        result = result.replaceAll(replacedKey, replacement);
-    }
-    return result;
+function replaceParams(
+  currentNode: InputJSONValue,
+  context: InputJSON,
+  params?: Record<string, string>,
+  invokeTreeNode?: InvokeTreeNode
+): string {
+  if (currentNode == null) {
+    return "";
+  }
+  const sql = currentNode.sql ?? currentNode;
+  if (!sql) {
+    return "";
+  }
+  // 动态、静态参数结合，且优先用静态参数
+  params = { ...(params ?? {}), ...currentNode.params };
+  // 无需替换
+  if (!params || Object.keys(params).length < 1) {
+    return sql;
+  }
+  let result = sql;
+  for (const paramsKey in params) {
+    const replacedKey = `#{${paramsKey}}`;
+    // 递归解析
+    // const replacement = replaceSubSql(
+    //   params[paramsKey],
+    //   context,
+    //   invokeTreeNode
+    // );
+    const replacement = params[paramsKey];
+    // find and replace
+    result = result.replaceAll(replacedKey, replacement);
+  }
+  return result;
 }
 
 /**
  * 替换子 SQL（@xxx）
  * @param sql
  * @param context
+ * @param invokeTreeNode
  */
-function replaceSubSql(sql: string, context: InputJSON): string {
-    if (!sql) {
-        return "";
+function replaceSubSql(
+  sql: string,
+  context: InputJSON,
+  invokeTreeNode?: InvokeTreeNode
+): string {
+  if (!sql) {
+    return "";
+  }
+  let result = sql;
+  result = String(result);
+  let regExpMatchArray = matchSubQuery(result);
+  // 依次替换
+  while (regExpMatchArray && regExpMatchArray.length > 2) {
+    // 找到结果
+    const subKey = regExpMatchArray[1];
+    // 可用来替换的节点
+    const replacementNode = context[subKey];
+    // 没有可替换的节点
+    if (!replacementNode) {
+      const errorMsg = `${subKey} 不存在`;
+      alert(errorMsg);
+      throw new Error(errorMsg);
     }
-    let result = sql;
-    result = String(result);
-    let regExpMatchArray = matchSubQuery(result);
-    // 依次替换
-    while (regExpMatchArray && regExpMatchArray.length > 2) {
-        // 找到结果
-        const subKey = regExpMatchArray[1];
-        // 可用来替换的节点
-        const replacementNode = context[subKey];
-        // 没有可替换的节点
-        if (!replacementNode) {
-            throw new Error(`${subKey} 不存在`);
-        }
-        // 获取要传递的动态参数
-        // e.g. "a = b, c = d"
-        let paramsStr = regExpMatchArray[2];
-        if (paramsStr) {
-            paramsStr = paramsStr.trim();
-        }
-        // e.g. ["a = b", "c = d"]
-        const singleParamsStrArray = paramsStr.split('|||');
-        // string => object
-        const params: Record<string, string> = {};
-        for (const singleParamsStr of singleParamsStrArray) {
-            // 必须分成 2 段
-            const keyValueArray = singleParamsStr.split('=', 2);
-            if (keyValueArray.length < 2) {
-                continue;
-            }
-            const key = keyValueArray[0].trim();
-            params[key] = keyValueArray[1].trim();
-        }
-        const replacement = replaceParams(replacementNode, context, params);
-        result = result.replaceAll(regExpMatchArray[0], replacement);
-        regExpMatchArray = matchSubQuery(result);
+    // 获取要传递的动态参数
+    // e.g. "a = b, c = d"
+    let paramsStr = regExpMatchArray[2];
+    if (paramsStr) {
+      paramsStr = paramsStr.trim();
     }
-    return result;
+    // e.g. ["a = b", "c = d"]
+    const singleParamsStrArray = paramsStr.split("|||");
+    // string => object
+    const params: Record<string, string> = {};
+    for (const singleParamsStr of singleParamsStrArray) {
+      // 必须分成 2 段
+      const keyValueArray = singleParamsStr.split("=", 2);
+      if (keyValueArray.length < 2) {
+        continue;
+      }
+      const key = keyValueArray[0].trim();
+      params[key] = keyValueArray[1].trim();
+    }
+    let childInvokeTreeNode;
+    if (invokeTreeNode) {
+      childInvokeTreeNode = {
+        title: subKey,
+        sql,
+        params,
+        children: [],
+      };
+      invokeTreeNode.children?.push(childInvokeTreeNode);
+    }
+    // 递归解析被替换节点
+    const replacement = generateSQL(
+      replacementNode,
+      context,
+      params,
+      childInvokeTreeNode
+    );
+    result = result.replace(regExpMatchArray[0], replacement);
+    regExpMatchArray = matchSubQuery(result);
+  }
+  return result;
 }
 
 /**
@@ -95,41 +168,41 @@ function replaceSubSql(sql: string, context: InputJSON): string {
  * @param str
  */
 function matchSubQuery(str: string) {
-    if (!str) {
-        return null;
+  if (!str) {
+    return null;
+  }
+  const regExp = /@([\u4e00-\u9fa5_a-zA-Z0-9]+)\((.*?)\)/;
+  let regExpMatchArray = str.match(regExp);
+  if (!regExpMatchArray || regExpMatchArray.index === undefined) {
+    return null;
+  }
+  // @ 开始位置
+  let startPos = regExpMatchArray.index;
+  // 左括号右侧
+  let leftParenthesisPos = startPos + regExpMatchArray[1].length + 2;
+  // 遍历游标
+  let currPos = leftParenthesisPos;
+  // 默认匹配结束位置，需要对此结果进行修正
+  let endPos = startPos + regExpMatchArray[0].length;
+  // 剩余待匹配左括号数量
+  let leftCount = 1;
+  while (currPos < str.length) {
+    const currentChar = str.charAt(currPos);
+    if (currentChar === "(") {
+      leftCount++;
+    } else if (currentChar === ")") {
+      leftCount--;
     }
-    const regExp = /@([\u4e00-\u9fa5_a-zA-Z0-9]+)\((.*?)\)/;
-    let regExpMatchArray = str.match(regExp);
-    if (!regExpMatchArray || regExpMatchArray.index === undefined) {
-        return null;
+    // 匹配结束
+    if (leftCount == 0) {
+      endPos = currPos + 1;
+      break;
     }
-    // @ 开始位置
-    let startPos = regExpMatchArray.index;
-    // 左括号右侧
-    let leftParenthesisPos = startPos + regExpMatchArray[1].length + 2;
-    // 遍历游标
-    let currPos = leftParenthesisPos;
-    // 默认匹配结束位置，需要对此结果进行修正
-    let endPos = startPos + regExpMatchArray[0].length;
-    // 剩余待匹配左括号数量
-    let leftCount = 1;
-    while (currPos < str.length) {
-        const currentChar = str.charAt(currPos);
-        if (currentChar === '(') {
-            leftCount++;
-        } else if (currentChar === ')') {
-            leftCount--;
-        }
-        // 匹配结束
-        if (leftCount == 0) {
-            endPos = currPos + 1;
-            break;
-        }
-        currPos++;
-    }
-    return [
-        str.slice(startPos, endPos),
-        regExpMatchArray[1],
-        str.slice(leftParenthesisPos, endPos - 1)
-    ]
+    currPos++;
+  }
+  return [
+    str.slice(startPos, endPos),
+    regExpMatchArray[1],
+    str.slice(leftParenthesisPos, endPos - 1),
+  ];
 }

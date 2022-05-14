@@ -12,8 +12,9 @@ interface InputJSONValue {
  * 调用树节点
  */
 interface InvokeTreeNode {
-  label: string;
+  title: string;
   sql: string;
+  key?: string;
   params?: Record<string, string>;
   children?: InvokeTreeNode[];
 }
