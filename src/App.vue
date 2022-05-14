@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { doGenerateSQL } from "./generator";
 import { importExample } from "./examples";
-import { onMounted, ref, toRaw } from "vue";
+import { onMounted, ref, toRaw, watch } from "vue";
 import * as monaco from "monaco-editor";
 import { format } from "sql-formatter";
 import { GithubOutlined } from "@ant-design/icons-vue";
@@ -65,23 +65,13 @@ const showInvokeTree = () => {
   drawerVisible.value = true;
 };
 
-const initJSONValue =
-  "{\n" +
-  '    "main": {\n' +
-  '        "sql": "select * from @union_all_layer(分区 = 2021) where 分区 = #{分区}",\n' +
-  '        "params": {\n' +
-  '            "分区": 2022\n' +
-  "        }\n" +
-  "    },\n" +
-  '    "union_all_layer": {\n' +
-  '        "sql": "select * from xx where 分区 = #{分区}"\n' +
-  "    }\n" +
-  "}";
+const initJSONValue = importExample("init");
 
 onMounted(() => {
   if (inputContainer.value) {
+    const initValue = localStorage.getItem("draft") ?? initJSONValue;
     inputEditor.value = monaco.editor.create(inputContainer.value, {
-      value: localStorage.getItem("draft") ?? initJSONValue,
+      value: initValue,
       language: "json",
       theme: "vs-dark",
       formatOnPaste: true,
@@ -90,6 +80,11 @@ onMounted(() => {
         enabled: false,
       },
     });
+    setTimeout(() => {
+      if (inputEditor.value) {
+        inputEditor.value.getAction("editor.action.formatDocument").run();
+      }
+    }, 500);
     setInterval(() => {
       if (inputEditor.value) {
         localStorage.setItem("draft", toRaw(inputEditor.value).getValue());
@@ -165,7 +160,7 @@ onMounted(() => {
       v-model:visible="drawerVisible"
       title="调用树"
       placement="right"
-      body-style="width: 50vw"
+      :body-style="{ width: '50vw' }"
     >
       <SearchableTree :tree="invokeTree" />
     </a-drawer>
