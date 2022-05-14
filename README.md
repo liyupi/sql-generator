@@ -6,7 +6,7 @@
 
 在线使用：http://sql.yupi.icu
 
-![工具截图](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/1/image-20220514004440480.png)
+![工具截图](./doc/assets/main.png)
 
 ## 项目作用
 
@@ -15,7 +15,7 @@
 3. 可以针对某部分 SQL 进行传参和调试
 4. 查看 SQL 语句的引用树和替换过程，便于分析理解 SQL
 
-![查看调用树和替换过程](https://xingqiu-tuchuang-1256524210.cos.ap-shanghai.myqcloud.com/1/image-20220514143425002.png)
+![查看调用树和替换过程](./doc/assets/invokeTree.png)
 
 ## 应用场景
 
