@@ -92,6 +92,9 @@ function replaceParams(
   }
   // 动态、静态参数结合，且优先用静态参数
   params = { ...(params ?? {}), ...currentNode.params };
+  if (invokeTreeNode) {
+    invokeTreeNode.params = params;
+  }
   // 无需替换
   if (!params || Object.keys(params).length < 1) {
     return sql;

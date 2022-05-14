@@ -59,6 +59,14 @@ const getSQL = () => {
   console.log(invokeTree.value);
 };
 
+const importExampleAndCal = () => {
+  if (inputEditor.value) {
+    const exampleJSON = importExample("complex");
+    toRaw(inputEditor.value).setValue(exampleJSON);
+    inputEditor.value.getAction("editor.action.formatDocument").run();
+  }
+};
+
 const showInvokeTree = () => {
   if (!invokeTree.value) {
     getSQL();
@@ -121,7 +129,7 @@ onMounted(() => {
         <a-button size="large" type="primary" ghost @click="showInvokeTree">
           查看调用树
         </a-button>
-        <a-button size="large" type="default" @click="importExample('init')">
+        <a-button size="large" type="default" @click="importExampleAndCal">
           导入例子
         </a-button>
       </a-space>
