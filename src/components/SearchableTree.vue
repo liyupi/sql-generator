@@ -13,13 +13,37 @@
       :tree-data="tree"
       @expand="onExpand"
     >
-      <template #title="{ title }">
-        <span v-if="title.indexOf(searchValue) > -1">
-          {{ title.substr(0, title.indexOf(searchValue)) }}
-          <span style="color: #f50">{{ searchValue }}</span>
-          {{ title.substr(title.indexOf(searchValue) + searchValue.length) }}
-        </span>
-        <span v-else>{{ title }}</span>
+      <template #title="{ title, sql, params, resultSQL }">
+        <a-popover title="详情" placement="top">
+          <template #content>
+            <div style="max-width: 600px">
+              <p>
+                <b>替换前语句：</b>
+                <a-typography-paragraph copyable>
+                  {{ sql }}
+                </a-typography-paragraph>
+              </p>
+              <p>
+                <b>替换参数：</b>
+                <a-typography-paragraph copyable>
+                  {{ params ?? "无" }}
+                </a-typography-paragraph>
+              </p>
+              <p>
+                <b>替换后语句：</b>
+                <a-typography-paragraph copyable>
+                  {{ resultSQL }}
+                </a-typography-paragraph>
+              </p>
+            </div>
+          </template>
+          <span v-if="title.indexOf(searchValue) > -1">
+            {{ title.substr(0, title.indexOf(searchValue)) }}
+            <span style="color: #f50">{{ searchValue }}</span>
+            {{ title.substr(title.indexOf(searchValue) + searchValue.length) }}
+          </span>
+          <span v-else>{{ title }}</span>
+        </a-popover>
       </template>
     </a-tree>
   </div>

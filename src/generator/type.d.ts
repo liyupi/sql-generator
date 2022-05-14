@@ -16,6 +16,7 @@ interface InvokeTreeNode {
   sql: string;
   key?: string;
   params?: Record<string, string>;
+  resultSQL?: string;
   children?: InvokeTreeNode[];
 }
 

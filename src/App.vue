@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { doGenerateSQL } from "./generator";
 import { importExample } from "./examples";
-import { onMounted, ref, toRaw, watch } from "vue";
+import { onMounted, ref, toRaw } from "vue";
 import * as monaco from "monaco-editor";
 import { format } from "sql-formatter";
 import { GithubOutlined } from "@ant-design/icons-vue";
@@ -56,6 +56,7 @@ const getSQL = () => {
   toRaw(outputEditor.value).setValue(result);
   // 获取调用树
   invokeTree.value = [generateResult.invokeTree];
+  console.log(invokeTree.value);
 };
 
 const showInvokeTree = () => {
@@ -120,7 +121,7 @@ onMounted(() => {
         <a-button size="large" type="primary" ghost @click="showInvokeTree">
           查看调用树
         </a-button>
-        <a-button size="large" type="default" @click="importExample">
+        <a-button size="large" type="default" @click="importExample('init')">
           导入例子
         </a-button>
       </a-space>

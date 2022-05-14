@@ -19,35 +19,55 @@ export function doGenerateSQL(json: InputJSON) {
   const rootInvokeTreeNode = { ...initTreeNode };
   const context = json;
   const resultSQL = generateSQL(
-    context.main,
+    "main",
     context,
     context.main?.params,
     rootInvokeTreeNode
   );
   return {
     resultSQL,
-    invokeTree: rootInvokeTreeNode,
+    invokeTree: rootInvokeTreeNode.children[0], // 取第一个作为根节点
   };
 }
 
 /**
  * 递归生成 SQL
- * @param currentNode
+ * @param key
  * @param context
  * @param params
  * @param invokeTreeNode
  */
 function generateSQL(
-  currentNode: InputJSONValue,
+  key: string,
   context: InputJSON,
   params?: Record<string, string>,
   invokeTreeNode?: InvokeTreeNode
 ): string {
+  const currentNode = context[key];
   if (!currentNode) {
     return "";
   }
-  const result = replaceParams(currentNode, context, params, invokeTreeNode);
-  return replaceSubSql(result, context, invokeTreeNode);
+  let childInvokeTreeNode: InvokeTreeNode | undefined;
+  if (invokeTreeNode) {
+    childInvokeTreeNode = {
+      title: key,
+      sql: currentNode.sql ?? currentNode,
+      params,
+      children: [],
+    };
+    invokeTreeNode.children?.push(childInvokeTreeNode);
+  }
+  const result = replaceParams(
+    currentNode,
+    context,
+    params,
+    childInvokeTreeNode
+  );
+  const resultSQL = replaceSubSql(result, context, childInvokeTreeNode);
+  if (childInvokeTreeNode) {
+    childInvokeTreeNode.resultSQL = resultSQL;
+  }
+  return resultSQL;
 }
 
 /**
@@ -140,23 +160,8 @@ function replaceSubSql(
       const key = keyValueArray[0].trim();
       params[key] = keyValueArray[1].trim();
     }
-    let childInvokeTreeNode;
-    if (invokeTreeNode) {
-      childInvokeTreeNode = {
-        title: subKey,
-        sql,
-        params,
-        children: [],
-      };
-      invokeTreeNode.children?.push(childInvokeTreeNode);
-    }
     // 递归解析被替换节点
-    const replacement = generateSQL(
-      replacementNode,
-      context,
-      params,
-      childInvokeTreeNode
-    );
+    const replacement = generateSQL(subKey, context, params, invokeTreeNode);
     result = result.replace(regExpMatchArray[0], replacement);
     regExpMatchArray = matchSubQuery(result);
   }
