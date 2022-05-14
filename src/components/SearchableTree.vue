@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
-const props = defineProps<{ tree: InvokeTree }>();
+const props = defineProps<{ tree?: InvokeTree }>();
 
 const tree = ref(props.tree);
 if (!tree.value) {
@@ -101,10 +101,13 @@ const generateList = (data: InvokeTreeNode[], preKey: string) => {
 generateList(tree.value, "");
 
 watch(searchValue, (value) => {
+  if (!tree?.value) {
+    return;
+  }
   expandedKeys.value = dataList
     .map((item: InvokeTreeNode) => {
       if (item.title.indexOf(value) > -1) {
-        return getParentKey(item.key, tree.value);
+        return getParentKey(item.key, tree.value as InvokeTree);
       }
       return null;
     })
