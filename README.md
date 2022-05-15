@@ -176,7 +176,7 @@ from
 
 功能比较轻量，因此选择优先在纯 browser 端实现。
 
-前端使用 `Vue3 + Vite + Ant Design Vue` 开发界面，选用 `Monaco Editor` 实现代码编辑、高亮、格式化等功能。
+前端使用 `Vue3 + Vite + Ant Design Vue` 开发界面，选用 `Monaco Editor` 实现代码编辑、高亮、格式化等功能，使用 `TypeScript + ESLint` 保证代码规范。
 
 SQL 生成逻辑如下：
 
