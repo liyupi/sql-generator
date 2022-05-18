@@ -84,6 +84,7 @@ onMounted(() => {
       language: "json",
       theme: "vs-dark",
       formatOnPaste: true,
+      automaticLayout: true,
       fontSize: 16,
       minimap: {
         enabled: false,
@@ -106,6 +107,7 @@ onMounted(() => {
       language: "sql",
       theme: "vs-dark",
       formatOnPaste: true,
+      automaticLayout: true,
       fontSize: 16,
       minimap: {
         enabled: false,
