@@ -155,13 +155,10 @@ function replaceSubSql(
     // string => object
     const params: Record<string, string> = {};
     for (const singleParamsStr of singleParamsStrArray) {
-      // 必须分成 2 段
-      const keyValueArray = singleParamsStr.split("=", 2);
-      if (keyValueArray.length < 2) {
-        continue;
-      }
-      const key = keyValueArray[0].trim();
-      params[key] = keyValueArray[1].trim();
+      // 以第一个=分割字符串
+      const splitIndex = singleParamsStr.indexOf("=");
+      const key = singleParamsStr.slice(0, splitIndex).trim();
+      params[key] = singleParamsStr.slice(splitIndex + 1).trim();
     }
     // 递归解析被替换节点
     const replacement = generateSQL(subKey, context, params, invokeTreeNode);
