@@ -138,14 +138,14 @@ onMounted(() => {
     </a-row>
     <div style="margin-top: 16px" />
     <a-row :gutter="[16, 16]">
-      <a-col :sm="24" :md="12">
+      <a-col :sm="24" :md="14">
         <div
           id="inputContainer"
           ref="inputContainer"
           style="height: 80vh; max-width: 100%"
         />
       </a-col>
-      <a-col :sm="24" :md="12">
+      <a-col :sm="24" :md="10">
         <div
           id="outputContainer"
           ref="outputContainer"
