@@ -10,7 +10,7 @@
     <a-tree
       :expanded-keys="expandedKeys"
       :auto-expand-parent="autoExpandParent"
-      :tree-data="tree"
+      :tree-data="props.tree"
       @expand="onExpand"
     >
       <template #title="{ title, sql, params, resultSQL }">
