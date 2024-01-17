@@ -156,7 +156,7 @@ function replaceSubSql(
     const params: Record<string, string> = {};
     for (const singleParamsStr of singleParamsStrArray) {
       // 必须分成 2 段
-      const keyValueArray = singleParamsStr.split("=", 2);
+      const keyValueArray = singleParamsStr.split(/=(.+)/, 2);
       if (keyValueArray.length < 2) {
         continue;
       }
