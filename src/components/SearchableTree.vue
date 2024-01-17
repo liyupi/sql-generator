@@ -14,9 +14,15 @@
       @expand="onExpand"
     >
       <template #title="{ title, sql, params, resultSQL }">
-        <a-popover title="详情" placement="top">
+        <a-popover title="详情" placement="top" trigger="click">
           <template #content>
-            <div style="max-width: 600px">
+            <div
+              style="
+                max-width: 600px;
+                max-height: calc(100vh - 70px);
+                overflow: auto;
+              "
+            >
               <p>
                 <b>替换前语句：</b>
                 <a-typography-paragraph copyable>
@@ -51,12 +57,9 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 
-const props = defineProps<{ tree?: InvokeTree }>();
-
-const tree = ref(props.tree);
-if (!tree.value) {
-  tree.value = [];
-}
+const props = withDefaults(defineProps<{ tree?: InvokeTree }>(), {
+  tree: () => [],
+});
 
 const expandedKeys = ref<string[]>([]);
 const searchValue = ref<string>("");
@@ -98,16 +101,16 @@ const generateList = (data: InvokeTreeNode[], preKey: string) => {
     }
   }
 };
-generateList(tree.value, "");
+generateList(props.tree, "");
 
 watch(searchValue, (value) => {
-  if (!tree?.value) {
+  if (!props.tree.length) {
     return;
   }
   expandedKeys.value = dataList
     .map((item: InvokeTreeNode) => {
       if (item.title.indexOf(value) > -1) {
-        return getParentKey(item.key, tree.value as InvokeTree);
+        return getParentKey(item.key, props.tree as InvokeTree);
       }
       return null;
     })

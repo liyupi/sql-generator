@@ -5,6 +5,8 @@ import { onMounted, ref, toRaw } from "vue";
 import * as monaco from "monaco-editor";
 import { format } from "sql-formatter";
 import { GithubOutlined } from "@ant-design/icons-vue";
+import { Splitpanes, Pane } from "splitpanes";
+import "splitpanes/dist/splitpanes.css";
 
 import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import JsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
@@ -137,22 +139,22 @@ onMounted(() => {
       </a-space>
     </a-row>
     <div style="margin-top: 16px" />
-    <a-row :gutter="[16, 16]">
-      <a-col :sm="24" :md="12">
+    <splitpanes class="default-theme">
+      <pane>
         <div
           id="inputContainer"
           ref="inputContainer"
           style="height: 80vh; max-width: 100%"
         />
-      </a-col>
-      <a-col :sm="24" :md="12">
+      </pane>
+      <pane>
         <div
           id="outputContainer"
           ref="outputContainer"
           style="height: 80vh; max-width: 100%"
         />
-      </a-col>
-    </a-row>
+      </pane>
+    </splitpanes>
     <br />
     <div style="margin-bottom: 16px">
       yupi：你能体会手写一句 3000 行的 SQL、牵一发而动全身的恐惧么？

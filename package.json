@@ -11,10 +11,12 @@
     "@ant-design/icons-vue": "^6.1.0",
     "ant-design-vue": "^3.2.3",
     "monaco-editor": "^0.33.0",
+    "splitpanes": "^3.1.5",
     "sql-formatter": "^4.0.2",
     "vue": "^3.2.25"
   },
   "devDependencies": {
+    "@types/splitpanes": "^2.2.6",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
     "@vitejs/plugin-vue": "^2.3.1",
