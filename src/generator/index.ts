@@ -11,7 +11,7 @@ export function doGenerateSQL(json: InputJSON) {
   if (!sql) {
     return null;
   }
-  const initTreeNode = {
+  const initTreeNode: InvokeTreeNode = {
     title: "main",
     sql,
     children: [],
@@ -26,7 +26,7 @@ export function doGenerateSQL(json: InputJSON) {
   );
   return {
     resultSQL,
-    invokeTree: rootInvokeTreeNode.children[0], // 取第一个作为根节点
+    invokeTree: rootInvokeTreeNode.children![0], // 取第一个作为根节点
   };
 }
 
