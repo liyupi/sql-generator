@@ -14,9 +14,15 @@
       @expand="onExpand"
     >
       <template #title="{ title, sql, params, resultSQL }">
-        <a-popover title="详情" placement="top">
+        <a-popover title="详情" placement="top" trigger="click">
           <template #content>
-            <div style="max-width: 600px">
+            <div
+              style="
+                max-width: 600px;
+                max-height: calc(100vh - 70px);
+                overflow: auto;
+              "
+            >
               <p>
                 <b>替换前语句：</b>
                 <a-typography-paragraph copyable>
